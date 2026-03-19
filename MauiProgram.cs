@@ -20,6 +20,7 @@ namespace FileUploadApp
 
             // Register Services
             builder.Services.AddSingleton<IAuthenticationService, MockAuthenticationService>();
+            builder.Services.AddSingleton<IUploadImage, MockUploadImageService>();
 
             // Register ViewModels
             builder.Services.AddTransient<MainViewModel>();

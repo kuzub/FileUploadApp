@@ -74,7 +74,7 @@ public class MockAuthenticationService : IAuthenticationService
         }
     }
 
-    private async Task<TokenResult?> RetrieveTokenAsync()
+    public async Task<TokenResult?> RetrieveTokenAsync()
     {
         await Task.Delay(2000); // Simulate network delay
 

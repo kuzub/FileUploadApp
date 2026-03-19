@@ -91,8 +91,11 @@ public class LoginViewModel : INotifyPropertyChanged
 
             if (result != null)
             {
-                // Navigate to main page on successful login
-                await Shell.Current.GoToAsync("//MainPage");
+                // Clear password for security
+                Password = string.Empty;
+                
+                // Navigate back to main page with parameter indicating successful login
+                await Shell.Current.GoToAsync("//MainPage?fromLogin=true");
             }
             else
             {
