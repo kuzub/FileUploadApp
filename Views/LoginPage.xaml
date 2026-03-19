@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:FileUploadApp.ViewModels"
+             x:Class="FileUploadApp.Views.LoginPage"
+             x:DataType="viewModels:LoginViewModel"
+             Title="Login"
+             Shell.NavBarIsVisible="False">
+
+    <Grid Padding="30" RowSpacing="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Logo/Title -->
+        <VerticalStackLayout Grid.Row="1" Spacing="10">
+            <Label Text="File Upload App"
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+            <Label Text="Please sign in to continue"
+                   FontSize="16"
+                   HorizontalOptions="Center"
+                   Opacity="0.7" />
+        </VerticalStackLayout>
+
+        <!-- Username Entry -->
+        <Border Grid.Row="2"
+                StrokeThickness="1"
+                Stroke="{StaticResource Gray300}"
+                StrokeShape="RoundRectangle 8"
+                Padding="15,10">
+            <Entry Placeholder="Username"
+                   Text="{Binding Username}"
+                   ReturnType="Next"
+                   ClearButtonVisibility="WhileEditing" />
+        </Border>
+
+        <!-- Password Entry -->
+        <Border Grid.Row="3"
+                StrokeThickness="1"
+                Stroke="{StaticResource Gray300}"
+                StrokeShape="RoundRectangle 8"
+                Padding="15,10">
+            <Entry Placeholder="Password"
+                   Text="{Binding Password}"
+                   IsPassword="True"
+                   ReturnType="Done"
+                   ReturnCommand="{Binding LoginCommand}"
+                   ClearButtonVisibility="WhileEditing" />
+        </Border>
+
+        <!-- Login Button and Error Message -->
+        <VerticalStackLayout Grid.Row="4" Spacing="15">
+            <Button Text="Login"
+                    Command="{Binding LoginCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                    HeightRequest="50"
+                    FontSize="18"
+                    CornerRadius="8" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                              IsVisible="{Binding IsBusy}"
+                              HorizontalOptions="Center"
+                              Color="{StaticResource Primary}" />
+
+            <Label Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}"
+                   TextColor="{StaticResource Danger}"
+                   HorizontalOptions="Center"
+                   FontSize="14" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
