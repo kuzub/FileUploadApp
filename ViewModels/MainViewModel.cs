@@ -1,9 +1,9 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using FileUploadApp.Models;
 using FileUploadApp.Services;
+using System.Collections.ObjectModel;
 
 namespace FileUploadApp.ViewModels;
 
@@ -11,20 +11,28 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly IUploadImage _uploadImageService;
+    private readonly IDatabaseService _databaseService;
     private bool _isBusy;
     private string _selectedImagesText = string.Empty;
     private bool _hasSelectedImages;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public MainViewModel(IAuthenticationService authenticationService, IUploadImage uploadImageService)
+    public MainViewModel(
+        IAuthenticationService authenticationService, 
+        IUploadImage uploadImageService,
+        IDatabaseService databaseService)
     {
         _authenticationService = authenticationService;
         _uploadImageService = uploadImageService;
+        _databaseService = databaseService;
         SelectedImages = new ObservableCollection<ImageFile>();
         PickImagesCommand = new Command(async () => await PickImagesAsync(), () => !IsBusy);
         UploadCommand = new Command(async () => await UploadImagesAsync(), () => !IsBusy && HasSelectedImages);
-        DeleteImageCommand = new Command<ImageFile>(async (image) => await DeleteImageAsync(image));
+        DeleteImageCommand = new Command<ImageFile>((image) => DeleteImage(image));
+        
+        // Initialize database
+        Task.Run(async () => await _databaseService.InitializeAsync());
     }
 
     public ObservableCollection<ImageFile> SelectedImages { get; }
@@ -185,16 +193,27 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
                     byte[] imageData = await File.ReadAllBytesAsync(imageFile.Path, cts.Token);
 
                     // Upload image using the service
-                    var result = await _uploadImageService.UploadImageAsync(
+                    var uploadResult = await _uploadImageService.UploadImageAsync(
                         imageData, 
                         imageFile.Name, 
                         accessToken, 
                         cts.Token);
 
-                    if (result != null && !string.IsNullOrWhiteSpace(result.ReceiptNo))
+                    if (uploadResult != null && !string.IsNullOrWhiteSpace(uploadResult.ReceiptNo))
                     {
+                        // Save to SQLite database
+                        var uploadResultDB = new Models.DB.UploadResult()
+                        {
+                            ReceiptNo = uploadResult.ReceiptNo,
+                            Price = uploadResult.Price,
+                            FileName = imageFile.Name,
+                            UploadedAt = DateTime.UtcNow
+                        };
+
+                        await _databaseService.SaveUploadResultAsync(uploadResultDB);
+
                         successCount++;
-                        uploadResults.Add($"✓ {imageFile.Name}\n  Receipt: {result.ReceiptNo}\n  Price: ${result.Price:F2}");
+                        uploadResults.Add($"✓ {imageFile.Name}\n  Receipt: {uploadResult.ReceiptNo}\n  Price: ${uploadResult.Price:F2}");
                     }
                     else
                     {
@@ -216,53 +235,32 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
             }
 
             // Show results
-            if (successCount > 0 && failedImages.Count == 0)
+            var message = $"Successfully uploaded: {successCount}/{SelectedImages.Count}";
+            if (uploadResults.Any())
             {
-                var resultsMessage = string.Join("\n\n", uploadResults);
-                await Application.Current?.MainPage?.DisplayAlert(
-                    "Success", 
-                    $"{successCount} image(s) uploaded successfully!\n\n{resultsMessage}", 
-                    "OK");
-                
-                // Clear selected images after successful upload
+                message += $"\n\n{string.Join("\n\n", uploadResults)}";
+            }
+            if (failedImages.Any())
+            {
+                message += $"\n\nFailed:\n{string.Join("\n", failedImages)}";
+            }
+
+            await Application.Current?.MainPage?.DisplayAlert(
+                "Upload Complete", 
+                message, 
+                "OK");
+
+            // Clear selected images after successful upload
+            if (successCount > 0)
+            {
                 SelectedImages.Clear();
-                HasSelectedImages = false;
-                SelectedImagesText = string.Empty;
-            }
-            else if (successCount > 0 && failedImages.Count > 0)
-            {
-                var resultsMessage = string.Join("\n\n", uploadResults);
-                var failedMessage = string.Join("\n", failedImages.Select(f => $"✗ {f}"));
-                await Application.Current?.MainPage?.DisplayAlert(
-                    "Partial Success", 
-                    $"{successCount} succeeded, {failedImages.Count} failed\n\n{resultsMessage}\n\nFailed:\n{failedMessage}", 
-                    "OK");
-                
-                // Remove successfully uploaded images
-                var imagesToRemove = SelectedImages
-                    .Where(img => !failedImages.Any(f => f.StartsWith(img.Name)))
-                    .ToList();
-                
-                foreach (var img in imagesToRemove)
-                {
-                    SelectedImages.Remove(img);
-                }
-                
                 UpdateSelectedImagesText();
-                HasSelectedImages = SelectedImages.Count > 0;
-            }
-            else
-            {
-                var failedMessage = string.Join("\n", failedImages.Select(f => $"✗ {f}"));
-                await Application.Current?.MainPage?.DisplayAlert(
-                    "Upload Failed", 
-                    $"All uploads failed:\n\n{failedMessage}", 
-                    "OK");
+                HasSelectedImages = false;
             }
         }
         catch (Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert("Error", $"Failed to upload images: {ex.Message}", "OK");
+            await Application.Current?.MainPage?.DisplayAlert("Error", $"Upload failed: {ex.Message}", "OK");
         }
         finally
         {
@@ -270,30 +268,30 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
         }
     }
 
-    private async Task DeleteImageAsync(ImageFile? imageFile)
+    private void DeleteImage(ImageFile image)
     {
-        if (imageFile == null)
-            return;
-
-        bool confirmed = await Application.Current?.MainPage?.DisplayAlert(
-            "Confirm Delete",
-            $"Are you sure you want to remove '{imageFile.Name}' from the selection?",
-            "Delete",
-            "Cancel");
-
-        if (confirmed)
+        if (image != null)
         {
-            SelectedImages.Remove(imageFile);
+            SelectedImages.Remove(image);
             UpdateSelectedImagesText();
-            HasSelectedImages = SelectedImages.Count > 0;
+            HasSelectedImages = SelectedImages.Any();
         }
     }
 
     private void UpdateSelectedImagesText()
     {
-        SelectedImagesText = SelectedImages.Count > 0 
-            ? $"{SelectedImages.Count} image(s) selected" 
-            : string.Empty;
+        if (!SelectedImages.Any())
+        {
+            SelectedImagesText = string.Empty;
+        }
+        else if (SelectedImages.Count == 1)
+        {
+            SelectedImagesText = $"1 image selected";
+        }
+        else
+        {
+            SelectedImagesText = $"{SelectedImages.Count} images selected";
+        }
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

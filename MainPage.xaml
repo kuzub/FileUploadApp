@@ -62,7 +62,7 @@
             </CollectionView>
             
             <Button
-                Text="Upload"
+                Text="Proceed"
                 Command="{Binding UploadCommand}"
                 IsEnabled="{Binding HasSelectedImages}"
                 SemanticProperties.Hint="Upload selected images"
