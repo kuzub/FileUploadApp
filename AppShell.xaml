@@ -15,7 +15,8 @@
     <ShellContent
         Title="Login"
         ContentTemplate="{DataTemplate views:LoginPage}"
-        Route="LoginPage" />
+        Route="LoginPage"
+        Shell.FlyoutItemIsVisible="False" />
 
     <ShellContent
         Title="History"
