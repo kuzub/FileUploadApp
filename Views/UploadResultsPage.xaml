@@ -1,0 +1,121 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:FileUploadApp.ViewModels"
+             x:Class="FileUploadApp.Views.UploadResultsPage"
+             x:DataType="viewmodels:UploadResultsViewModel"
+             Title="Upload Results"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="20">
+        <!-- Summary Section -->
+        <Border Grid.Row="0"
+                StrokeThickness="0"
+                Background="{DynamicResource CardBackground}"
+                Padding="20"
+                Margin="0,0,0,20">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="12"/>
+            </Border.StrokeShape>
+
+            <StackLayout Spacing="10">
+                <Label Text="Upload Summary"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="20">
+                    <StackLayout Grid.Column="0" Spacing="5">
+                        <Label Text="✓ Successful"
+                               FontSize="14"
+                               TextColor="#4CAF50"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding TotalUploaded}"
+                               FontSize="32"
+                               FontAttributes="Bold"
+                               TextColor="#4CAF50"
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+
+                    <StackLayout Grid.Column="1" Spacing="5">
+                        <Label Text="✗ Failed"
+                               FontSize="14"
+                               TextColor="#F44336"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding TotalFailed}"
+                               FontSize="32"
+                               FontAttributes="Bold"
+                               TextColor="#F44336"
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Grid>
+            </StackLayout>
+        </Border>
+
+        <!-- Results List -->
+        <ScrollView Grid.Row="1">
+            <CollectionView ItemsSource="{Binding UploadResults}"
+                           SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="viewmodels:UploadResultItem">
+                        <Border StrokeThickness="0"
+                                Padding="15"
+                                Margin="0,0,0,10">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8"/>
+                            </Border.StrokeShape>
+                            <Border.Background>
+                                <SolidColorBrush Color="{Binding StatusColor}"/>
+                            </Border.Background>
+
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15">
+                                <Label Grid.Column="0"
+                                       Text="{Binding StatusIcon}"
+                                       FontSize="24"
+                                       TextColor="{Binding StatusColor}"
+                                       VerticalOptions="Center"/>
+
+                                <Label Grid.Column="1"
+                                       Text="{Binding DisplayText}"
+                                       FontSize="14"
+                                       TextColor="{DynamicResource PrimaryTextColor}"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="WordWrap"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <Label Text="No results to display"
+                           FontSize="16"
+                           TextColor="{DynamicResource Gray500}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Margin="0,40,0,0"/>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </ScrollView>
+
+        <!-- Close Button -->
+        <Button Grid.Row="2"
+                Text="Done"
+                Command="{Binding CloseCommand}"
+                Margin="0,20,0,0"
+                HeightRequest="50"
+                FontSize="16"
+                FontAttributes="Bold"
+                BackgroundColor="{DynamicResource Primary}"
+                TextColor="White"
+                CornerRadius="8"/>
+
+        <!-- Loading Overlay -->
+        <ActivityIndicator Grid.RowSpan="3"
+                          IsRunning="{Binding IsBusy}"
+                          IsVisible="{Binding IsBusy}"
+                          Color="{DynamicResource Primary}"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center"/>
+    </Grid>
+</ContentPage>

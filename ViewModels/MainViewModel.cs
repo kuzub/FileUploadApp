@@ -1,9 +1,9 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using FileUploadApp.Models;
 using FileUploadApp.Services;
-using System.Collections.ObjectModel;
 
 namespace FileUploadApp.ViewModels;
 
@@ -181,9 +181,7 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
             }
 
             // Upload images
-            var successCount = 0;
-            var failedImages = new List<string>();
-            var uploadResults = new List<string>();
+            var uploadResultItems = new List<UploadResultItem>();
 
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)); // 5 minute timeout for all uploads
 
@@ -214,12 +212,24 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
 
                         await _databaseService.SaveUploadResultAsync(uploadResultDB);
 
-                        successCount++;
-                        uploadResults.Add($"✓ {imageFile.Name}\n  Receipt: {uploadResult.ReceiptNo}\n  Price: ${uploadResult.Price:F2}");
+                        // Add success result
+                        uploadResultItems.Add(new UploadResultItem
+                        {
+                            FileName = imageFile.Name,
+                            IsSuccess = true,
+                            ReceiptNo = uploadResult.ReceiptNo,
+                            Price = uploadResult.Price
+                        });
                     }
                     else
                     {
-                        failedImages.Add(imageFile.Name);
+                        // Add failure result
+                        uploadResultItems.Add(new UploadResultItem
+                        {
+                            FileName = imageFile.Name,
+                            IsSuccess = false,
+                            ErrorMessage = "Upload failed - no response from server"
+                        });
                     }
                 }
                 catch (OperationCanceledException)
@@ -232,33 +242,28 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
                 }
                 catch (Exception ex)
                 {
-                    failedImages.Add($"{imageFile.Name} ({ex.Message})");
+                    // Add failure result with error
+                    uploadResultItems.Add(new UploadResultItem
+                    {
+                        FileName = imageFile.Name,
+                        IsSuccess = false,
+                        ErrorMessage = ex.Message
+                    });
                 }
             }
 
-            // Show results
-            var message = $"Successfully uploaded: {successCount}/{SelectedImages.Count}";
-            if (uploadResults.Any())
-            {
-                message += $"\n\n{string.Join("\n\n", uploadResults)}";
-            }
-            if (failedImages.Any())
-            {
-                message += $"\n\nFailed:\n{string.Join("\n", failedImages)}";
-            }
+            // Clear selected images after upload attempt
+            SelectedImages.Clear();
+            UpdateSelectedImagesText();
+            HasSelectedImages = false;
 
-            await Application.Current?.MainPage?.DisplayAlert(
-                "Upload Complete", 
-                message, 
-                "OK");
-
-            // Clear selected images after successful upload
-            if (successCount > 0)
+            // Navigate to results page with upload results
+            var navigationParameter = new Dictionary<string, object>
             {
-                SelectedImages.Clear();
-                UpdateSelectedImagesText();
-                HasSelectedImages = false;
-            }
+                { "results", uploadResultItems }
+            };
+
+            await Shell.Current.GoToAsync("UploadResultsPage", navigationParameter);
         }
         catch (Exception ex)
         {

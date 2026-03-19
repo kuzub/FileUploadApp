@@ -27,11 +27,13 @@ namespace FileUploadApp
             builder.Services.AddTransient<MainViewModel>();
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<HistoryViewModel>();
+            builder.Services.AddTransient<UploadResultsViewModel>();
 
             // Register Views
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<HistoryPage>();
+            builder.Services.AddTransient<Views.UploadResultsPage>();
 
 #if DEBUG
     		builder.Logging.AddDebug();
