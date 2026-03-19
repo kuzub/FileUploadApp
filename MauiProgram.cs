@@ -22,6 +22,7 @@ namespace FileUploadApp
             builder.Services.AddSingleton<IAuthenticationService, MockAuthenticationService>();
 
             // Register ViewModels
+            builder.Services.AddTransient<MainViewModel>();
             builder.Services.AddTransient<LoginViewModel>();
 
             // Register Views
