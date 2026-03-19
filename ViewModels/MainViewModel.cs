@@ -1,3 +1,4 @@
+using FileUploadApp.Models;
 using FileUploadApp.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -18,11 +19,13 @@ public class MainViewModel : INotifyPropertyChanged
     public MainViewModel(IAuthenticationService authenticationService)
     {
         _authenticationService = authenticationService;
-        SelectedImagePaths = new ObservableCollection<string>();
+        SelectedImages = new ObservableCollection<ImageFile>();
         PickImagesCommand = new Command(async () => await PickImagesAsync(), () => !IsBusy);
+        UploadCommand = new Command(async () => await UploadImagesAsync(), () => !IsBusy && HasSelectedImages);
+        DeleteImageCommand = new Command<ImageFile>(async (image) => await DeleteImageAsync(image));
     }
 
-    public ObservableCollection<string> SelectedImagePaths { get; }
+    public ObservableCollection<ImageFile> SelectedImages { get; }
 
     public bool IsBusy
     {
@@ -34,6 +37,7 @@ public class MainViewModel : INotifyPropertyChanged
                 _isBusy = value;
                 OnPropertyChanged();
                 ((Command)PickImagesCommand).ChangeCanExecute();
+                ((Command)UploadCommand).ChangeCanExecute();
             }
         }
     }
@@ -60,11 +64,14 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 _hasSelectedImages = value;
                 OnPropertyChanged();
+                ((Command)UploadCommand).ChangeCanExecute();
             }
         }
     }
 
     public ICommand PickImagesCommand { get; }
+    public ICommand UploadCommand { get; }
+    public ICommand DeleteImageCommand { get; }
 
     private async Task PickImagesAsync()
     {
@@ -75,33 +82,25 @@ public class MainViewModel : INotifyPropertyChanged
         {
             IsBusy = true;
 
-            var customFileType = new FilePickerFileType(
-                new Dictionary<DevicePlatform, IEnumerable<string>>
-                {
-                    { DevicePlatform.Android, new[] { "image/*" } },
-                    { DevicePlatform.WinUI, new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" } },
-                    { DevicePlatform.iOS, new[] { "public.image" } },
-                    { DevicePlatform.macOS, new[] { "public.image" } }
-                });
-
             var options = new PickOptions
             {
-                FileTypes = customFileType,
-                PickerTitle = "Select images"
+                PickerTitle = "Select files",
+                FileTypes = FilePickerFileType.Images,
             };
 
             var results = await FilePicker.Default.PickMultipleAsync(options);
 
             if (results != null && results.Any())
             {
-                SelectedImagePaths.Clear();
+                SelectedImages.Clear();
 
                 foreach (var result in results)
                 {
-                    SelectedImagePaths.Add(result.FullPath);
+                    var imageFile = new ImageFile(result.FileName, result.FullPath);
+                    SelectedImages.Add(imageFile);
                 }
 
-                SelectedImagesText = $"{SelectedImagePaths.Count} image(s) selected";
+                UpdateSelectedImagesText();
                 HasSelectedImages = true;
             }
         }
@@ -114,6 +113,63 @@ public class MainViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
         }
+    }
+
+    private async Task UploadImagesAsync()
+    {
+        if (IsBusy || !HasSelectedImages)
+            return;
+
+        try
+        {
+            IsBusy = true;
+
+            // TODO: Implement your upload logic here
+            // Example: await _uploadService.UploadFilesAsync(SelectedImages);
+
+            await Task.Delay(2000); // Simulating upload
+            
+            await Application.Current?.MainPage?.DisplayAlert("Success", $"{SelectedImages.Count} image(s) uploaded successfully!", "OK");
+            
+            // Clear selected images after successful upload
+            SelectedImages.Clear();
+            HasSelectedImages = false;
+            SelectedImagesText = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            await Application.Current?.MainPage?.DisplayAlert("Error", $"Failed to upload images: {ex.Message}", "OK");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task DeleteImageAsync(ImageFile? imageFile)
+    {
+        if (imageFile == null)
+            return;
+
+        bool confirmed = await Application.Current?.MainPage?.DisplayAlert(
+            "Confirm Delete",
+            $"Are you sure you want to remove '{imageFile.Name}' from the selection?",
+            "Delete",
+            "Cancel");
+
+        if (confirmed)
+        {
+            SelectedImages.Remove(imageFile);
+            UpdateSelectedImagesText();
+            HasSelectedImages = SelectedImages.Count > 0;
+        }
+    }
+
+    private void UpdateSelectedImagesText()
+    {
+        SelectedImagesText = SelectedImages.Count > 0 
+            ? $"{SelectedImages.Count} image(s) selected" 
+            : string.Empty;
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

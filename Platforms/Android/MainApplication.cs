@@ -1,5 +1,6 @@
 ﻿using Android.App;
 using Android.Runtime;
+[assembly: UsesPermission(Android.Manifest.Permission.ReadMediaImages)]
 
 namespace FileUploadApp
 {
