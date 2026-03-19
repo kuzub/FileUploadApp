@@ -30,6 +30,7 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
         PickImagesCommand = new Command(async () => await PickImagesAsync(), () => !IsBusy);
         UploadCommand = new Command(async () => await UploadImagesAsync(), () => !IsBusy && HasSelectedImages);
         DeleteImageCommand = new Command<ImageFile>((image) => DeleteImage(image));
+        ShowHistoryCommand = new Command(async () => await ShowHistoryAsync());
         
         // Initialize database
         Task.Run(async () => await _databaseService.InitializeAsync());
@@ -82,6 +83,7 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
     public ICommand PickImagesCommand { get; }
     public ICommand UploadCommand { get; }
     public ICommand DeleteImageCommand { get; }
+    public ICommand ShowHistoryCommand { get; }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
@@ -276,6 +278,11 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
             UpdateSelectedImagesText();
             HasSelectedImages = SelectedImages.Any();
         }
+    }
+
+    private async Task ShowHistoryAsync()
+    {
+        await Shell.Current.GoToAsync("//HistoryPage");
     }
 
     private void UpdateSelectedImagesText()

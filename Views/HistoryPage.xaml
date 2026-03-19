@@ -1,0 +1,173 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:FileUploadApp.ViewModels"
+             xmlns:models="clr-namespace:FileUploadApp.Models.DB"
+             x:Class="FileUploadApp.Views.HistoryPage"
+             x:DataType="viewmodels:HistoryViewModel"
+             Title="Upload History">
+
+    <Grid RowDefinitions="Auto,*" Padding="0">
+
+        <!-- Header with actions -->
+        <Grid Grid.Row="0" 
+              Padding="20,15"
+              BackgroundColor="{StaticResource Primary}"
+              ColumnDefinitions="*,Auto">
+
+            <Label Grid.Column="0"
+                   Text="OCR Upload History"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   VerticalOptions="Center" />
+
+            <Button Grid.Column="1"
+                    Text="Clear All"
+                    Command="{Binding ClearAllCommand}"
+                    IsEnabled="{Binding HasResults}"
+                    BackgroundColor="{StaticResource Danger}"
+                    TextColor="White"
+                    CornerRadius="5"
+                    Padding="15,8" />
+        </Grid>
+
+        <!-- Content with RefreshView -->
+        <RefreshView Grid.Row="1"
+                     Command="{Binding RefreshCommand}"
+                     IsRefreshing="{Binding IsBusy}">
+            <Grid>
+                <!-- Empty state -->
+                <VerticalStackLayout IsVisible="{Binding HasResults, Converter={StaticResource InvertedBoolConverter}}"
+                                    HorizontalOptions="Center"
+                                    VerticalOptions="Center"
+                                    Spacing="15"
+                                    Padding="30">
+                    <Image Source="dotnet_bot.png"
+                           HeightRequest="150"
+                           Aspect="AspectFit"
+                           Opacity="0.3" />
+                    <Label Text="{Binding EmptyMessage}"
+                           FontSize="18"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{StaticResource Gray600}" />
+                    <Button Text="Refresh"
+                            Command="{Binding LoadHistoryCommand}"
+                            HorizontalOptions="Center"
+                            WidthRequest="150" />
+                </VerticalStackLayout>
+
+                <!-- History List -->
+                <CollectionView ItemsSource="{Binding UploadResults}"
+                                IsVisible="{Binding HasResults}"
+                                SelectionMode="None"
+                                Margin="10,10,10,10">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:UploadResult">
+                            <SwipeView>
+                                <SwipeView.RightItems>
+                                    <SwipeItems>
+                                        <SwipeItem Text="Delete"
+                                                   BackgroundColor="{StaticResource Danger}"
+                                                   Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:HistoryViewModel}}, Path=DeleteItemCommand}"
+                                                   CommandParameter="{Binding .}" />
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+
+                                <Border Stroke="{StaticResource Gray200}"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 12"
+                                        Padding="15"
+                                        Margin="5,5"
+                                        BackgroundColor="White">
+                                    <Border.Shadow>
+                                        <Shadow Brush="Black"
+                                                Offset="0,2"
+                                                Radius="4"
+                                                Opacity="0.1" />
+                                    </Border.Shadow>
+
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                          ColumnDefinitions="*,Auto"
+                                          RowSpacing="8">
+
+                                        <!-- Receipt Number -->
+                                        <Label Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="{Binding ReceiptNo, StringFormat='Receipt: {0}'}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Primary}" />
+
+                                        <!-- Price -->
+                                        <Label Grid.Row="0"
+                                               Grid.Column="1"
+                                               Text="{Binding Price, StringFormat='${0:F2}'}"
+                                               FontSize="20"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Success}"
+                                               HorizontalOptions="End"
+                                               VerticalOptions="Center" />
+
+                                        <!-- File Name -->
+                                        <Grid Grid.Row="1"
+                                              Grid.ColumnSpan="2"
+                                              ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="📄 "
+                                                   FontSize="14" />
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding FileName}"
+                                                   FontSize="14"
+                                                   TextColor="{StaticResource Gray600}"
+                                                   LineBreakMode="TailTruncation" />
+                                        </Grid>
+
+                                        <!-- Upload Date -->
+                                        <Grid Grid.Row="2"
+                                              Grid.ColumnSpan="2"
+                                              ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="🕒 "
+                                                   FontSize="14" />
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding UploadedAt, StringFormat='{0:MMM dd, yyyy - hh:mm tt}'}"
+                                                   FontSize="14"
+                                                   TextColor="{StaticResource Gray600}" />
+                                        </Grid>
+
+                                        <!-- Separator -->
+                                        <BoxView Grid.Row="3"
+                                                 Grid.ColumnSpan="2"
+                                                 HeightRequest="1"
+                                                 Color="{StaticResource Gray200}"
+                                                 Margin="0,5" />
+
+                                        <!-- Swipe instruction -->
+                                        <Label Grid.Row="4"
+                                               Grid.ColumnSpan="2"
+                                               Text="← Swipe left to delete"
+                                               FontSize="12"
+                                               TextColor="{StaticResource Gray400}"
+                                               HorizontalTextAlignment="End"
+                                               Opacity="0.7" />
+                                    </Grid>
+                                </Border>
+                            </SwipeView>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Loading overlay -->
+                <Grid IsVisible="{Binding IsBusy}"
+                      BackgroundColor="#80000000">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                      Color="White"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center" />
+                </Grid>
+            </Grid>
+        </RefreshView>
+    </Grid>
+
+</ContentPage>

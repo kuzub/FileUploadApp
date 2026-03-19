@@ -68,6 +68,13 @@
                 SemanticProperties.Hint="Upload selected images"
                 HorizontalOptions="Fill" />
 
+            <Button
+                Text="Show History"
+                Command="{Binding ShowHistoryCommand}"
+                SemanticProperties.Hint="View upload history"
+                HorizontalOptions="Fill"
+                BackgroundColor="{StaticResource Secondary}" />
+
         </VerticalStackLayout>
             <ActivityIndicator IsRunning="{Binding IsBusy}"
                              IsVisible="{Binding IsBusy}"
