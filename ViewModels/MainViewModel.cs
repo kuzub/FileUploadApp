@@ -176,12 +176,10 @@ public class MainViewModel : BaseViewModel, IQueryAttributable
                 return;
             }
 
-            // Upload images
-            var uploadResultItems = new List<UploadResultItem>();
-
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)); // 5 minute timeout for all uploads
 
-            foreach (var imageFile in SelectedImages.ToList())
+            // Create upload tasks for all images
+            var uploadTasks = SelectedImages.ToList().Select(async imageFile =>
             {
                 try
                 {
@@ -208,43 +206,56 @@ public class MainViewModel : BaseViewModel, IQueryAttributable
 
                         await _databaseService.SaveUploadResultAsync(uploadResultDB);
 
-                        // Add success result
-                        uploadResultItems.Add(new UploadResultItem
+                        // Return success result
+                        return new UploadResultItem
                         {
                             FileName = imageFile.Name,
                             IsSuccess = true,
                             ReceiptNo = uploadResult.ReceiptNo,
                             Price = uploadResult.Price
-                        });
+                        };
                     }
                     else
                     {
-                        // Add failure result
-                        uploadResultItems.Add(new UploadResultItem
+                        // Return failure result
+                        return new UploadResultItem
                         {
                             FileName = imageFile.Name,
                             IsSuccess = false,
                             ErrorMessage = "Upload failed - no response from server"
-                        });
+                        };
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    await _notificationService.ShowAlertAsync(
-                        "Upload Cancelled", 
-                        "Upload operation was cancelled due to timeout.");
-                    return;
+                    return new UploadResultItem
+                    {
+                        FileName = imageFile.Name,
+                        IsSuccess = false,
+                        ErrorMessage = "Upload cancelled due to timeout"
+                    };
                 }
                 catch (Exception ex)
                 {
-                    // Add failure result with error
-                    uploadResultItems.Add(new UploadResultItem
+                    // Return failure result with error
+                    return new UploadResultItem
                     {
                         FileName = imageFile.Name,
                         IsSuccess = false,
                         ErrorMessage = ex.Message
-                    });
+                    };
                 }
+            });
+
+            // Execute all uploads in parallel
+            var uploadResultItems = await Task.WhenAll(uploadTasks);
+
+            // Check if any upload was cancelled
+            if (uploadResultItems.Any(r => !r.IsSuccess && r.ErrorMessage.Contains("timeout")))
+            {
+                await _notificationService.ShowAlertAsync(
+                    "Upload Cancelled", 
+                    "Upload operation was cancelled due to timeout.");
             }
 
             // Clear selected images after upload attempt
@@ -255,7 +266,7 @@ public class MainViewModel : BaseViewModel, IQueryAttributable
             // Navigate to results page with upload results
             var navigationParameter = new Dictionary<string, object>
             {
-                { "results", uploadResultItems }
+                { "results", uploadResultItems.ToList() }
             };
 
             await Shell.Current.GoToAsync("UploadResultsPage", navigationParameter);
