@@ -25,14 +25,14 @@ namespace FileUploadApp
             builder.Services.AddSingleton<INotificationService, NotificationService>();
 
             // Register ViewModels
-            builder.Services.AddTransient<MainViewModel>();
+            builder.Services.AddSingleton<MainViewModel>(); // Changed to Singleton
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<HistoryViewModel>();
             builder.Services.AddTransient<UploadResultsViewModel>();
 
             // Register Views
             builder.Services.AddTransient<LoginPage>();
-            builder.Services.AddTransient<MainPage>();
+            builder.Services.AddSingleton<MainPage>(); // Changed to Singleton
             builder.Services.AddTransient<HistoryPage>();
             builder.Services.AddTransient<Views.UploadResultsPage>();
 
