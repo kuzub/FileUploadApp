@@ -1,19 +1,15 @@
 using FileUploadApp.Services;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
 namespace FileUploadApp.ViewModels;
 
-public class LoginViewModel : INotifyPropertyChanged
+public class LoginViewModel : BaseViewModel
 {
     private readonly IAuthenticationService _authenticationService;
     private string _username = string.Empty;
     private string _password = string.Empty;
     private bool _isBusy;
     private string _errorMessage = string.Empty;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     public LoginViewModel(IAuthenticationService authenticationService)
     {
@@ -110,10 +106,5 @@ public class LoginViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
         }
-    }
-
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
