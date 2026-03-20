@@ -22,7 +22,7 @@ public class MockAuthenticationService : IAuthenticationService
         var token = new TokenResult
         {
             AccessToken = $"mock_token_{Guid.NewGuid():N}",
-            Expiration = DateTime.UtcNow.AddHours(1)
+            Expiration = DateTime.UtcNow.AddSeconds(42)
         };
 
         // Store token securely
@@ -65,7 +65,7 @@ public class MockAuthenticationService : IAuthenticationService
         try
         {
             await SecureStorage.SetAsync(TokenKey, token.AccessToken ?? string.Empty);
-            await SecureStorage.SetAsync(ExpirationKey, token.Expiration.ToString("O"));
+            await SecureStorage.SetAsync(ExpirationKey, token.Expiration.Ticks.ToString());
         }
         catch (Exception ex)
         {
@@ -88,12 +88,12 @@ public class MockAuthenticationService : IAuthenticationService
                 return null;
             }
 
-            if (DateTime.TryParse(expirationString, out var expiration))
+            if (long.TryParse(expirationString, out var ticks))
             {
                 return new TokenResult
                 {
                     AccessToken = accessToken,
-                    Expiration = expiration
+                    Expiration = new DateTime(ticks, DateTimeKind.Utc)
                 };
             }
 
