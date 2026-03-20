@@ -8,79 +8,81 @@
 
     <ScrollView>
         <Grid>
-        <VerticalStackLayout
+            <VerticalStackLayout
             Padding="30,0"
             Spacing="25">
-            <Image
+                <Image
                 Source="logo.png"
                 HeightRequest="185"
                 Aspect="AspectFit"
                 SemanticProperties.Description="" />
 
-            <Button
+                <Button
                 Text="Pick Images from Gallery"
                 Command="{Binding PickImagesCommand}"
                 SemanticProperties.Hint="Select multiple images from your gallery"
                 HorizontalOptions="Fill" />
 
-            <Label
+                <Label
                 Text="{Binding SelectedImagesText}"
                 IsVisible="{Binding HasSelectedImages}"
                 HorizontalOptions="Center"
                 FontAttributes="Bold" />
 
-            <CollectionView
+                <CollectionView
                 ItemsSource="{Binding SelectedImages}"
                 SelectionMode="None"
-                HeightRequest="300"
                 IsVisible="{Binding HasSelectedImages}">
-                <CollectionView.ItemsLayout>
-                    <GridItemsLayout Orientation="Horizontal" Span="1" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:ImageFile">
-                        <Frame Padding="5" Margin="5" CornerRadius="10">
-                            <VerticalStackLayout Spacing="5">
-                                <Image Source="{Binding Path}" 
-                                       Aspect="AspectFill"
-                                       HeightRequest="150"
-                                       WidthRequest="150" />
-                                <Label Text="{Binding Name}"
-                                       FontSize="12"
-                                       LineBreakMode="TailTruncation"
-                                       HorizontalTextAlignment="Center"
-                                       MaxLines="1" />
-                                <Button Text="Delete"
-                                        HorizontalOptions="Center"
-                                        CornerRadius="5"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}, Path=DeleteImageCommand}"
-                                        CommandParameter="{Binding .}"/>
-                            </VerticalStackLayout>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-            
-            <Button
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Horizontal" Span="1" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:ImageFile">
+                            <Border Stroke="{x:Null}" StrokeThickness="0" Padding="5" Margin="5" StrokeShape="RoundRectangle 10">
+                                <Grid RowSpacing="5" 
+                                RowDefinitions="150,Auto,Auto">
+                                    <Image Source="{Binding Path}" 
+                                    Aspect="AspectFill"
+                                    HeightRequest="150"
+                                    WidthRequest="150"
+                                    Grid.Row="0"/>
+                                    <Label Text="{Binding Name}"
+                                    FontSize="12"
+                                    LineBreakMode="TailTruncation"
+                                    HorizontalTextAlignment="Center"
+                                    MaxLines="1"
+                                    Grid.Row="1"/>
+                                    <Button Text="Delete"
+                                    HorizontalOptions="Center"
+                                    CornerRadius="5"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}, Path=DeleteImageCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Grid.Row="2"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Button
                 Text="Proceed"
                 Command="{Binding UploadCommand}"
                 IsEnabled="{Binding HasSelectedImages}"
                 SemanticProperties.Hint="Upload selected images"
                 HorizontalOptions="Fill" />
 
-            <Button
+                <Button
                 Text="Show History"
                 Command="{Binding ShowHistoryCommand}"
                 SemanticProperties.Hint="View upload history"
                 HorizontalOptions="Fill"
                 BackgroundColor="{StaticResource Secondary}" />
 
-        </VerticalStackLayout>
+            </VerticalStackLayout>
             <ActivityIndicator IsRunning="{Binding IsBusy}"
                              IsVisible="{Binding IsBusy}"
                              Color="{StaticResource Primary}"
                              HorizontalOptions="Center" />
         </Grid>
     </ScrollView>
-
 </ContentPage>
