@@ -12,6 +12,7 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
     private readonly IAuthenticationService _authenticationService;
     private readonly IUploadImage _uploadImageService;
     private readonly IDatabaseService _databaseService;
+    private readonly INotificationService _notificationService;
     private bool _isBusy;
     private string _selectedImagesText = string.Empty;
     private bool _hasSelectedImages;
@@ -21,15 +22,17 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
     public MainViewModel(
         IAuthenticationService authenticationService, 
         IUploadImage uploadImageService,
-        IDatabaseService databaseService)
+        IDatabaseService databaseService,
+        INotificationService notificationService)
     {
         _authenticationService = authenticationService;
         _uploadImageService = uploadImageService;
         _databaseService = databaseService;
+        _notificationService = notificationService;
         SelectedImages = new ObservableCollection<ImageFile>();
         PickImagesCommand = new Command(async () => await PickImagesAsync(), () => !IsBusy);
         UploadCommand = new Command(async () => await UploadImagesAsync(), () => !IsBusy && HasSelectedImages);
-        DeleteImageCommand = new Command<ImageFile>((image) => DeleteImage(image));
+        DeleteImageCommand = new Command<ImageFile>(async (image) => await DeleteImageAsync(image));
         ShowHistoryCommand = new Command(async () => await ShowHistoryAsync());
         
         // Initialize database
@@ -135,8 +138,7 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
         }
         catch (Exception ex)
         {
-            // In a real app, you might want to use a messaging service or event
-            await Application.Current?.MainPage?.DisplayAlert("Error", $"Failed to pick images: {ex.Message}", "OK");
+            await _notificationService.ShowAlertAsync("Error", $"Failed to pick images: {ex.Message}");
         }
         finally
         {
@@ -158,10 +160,9 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
             
             if (!isAuthenticated)
             {
-                await Application.Current?.MainPage?.DisplayAlert(
+                await _notificationService.ShowAlertAsync(
                     "Authentication Required", 
-                    "Your session has expired. Please log in again.", 
-                    "OK");
+                    "Your session has expired. Please log in again.");
                 
                 // Navigate to login page (images will be preserved in SelectedImages collection)
                 await Shell.Current.GoToAsync("//LoginPage");
@@ -173,10 +174,9 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
             var accessToken = tokenResult?.AccessToken;
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                await Application.Current?.MainPage?.DisplayAlert(
+                await _notificationService.ShowAlertAsync(
                     "Error", 
-                    "Failed to retrieve access token.", 
-                    "OK");
+                    "Failed to retrieve access token.");
                 return;
             }
 
@@ -234,10 +234,9 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
                 }
                 catch (OperationCanceledException)
                 {
-                    await Application.Current?.MainPage?.DisplayAlert(
+                    await _notificationService.ShowAlertAsync(
                         "Upload Cancelled", 
-                        "Upload operation was cancelled due to timeout.", 
-                        "OK");
+                        "Upload operation was cancelled due to timeout.");
                     return;
                 }
                 catch (Exception ex)
@@ -267,7 +266,7 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
         }
         catch (Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert("Error", $"Upload failed: {ex.Message}", "OK");
+            await _notificationService.ShowAlertAsync("Error", $"Upload failed: {ex.Message}");
         }
         finally
         {
@@ -275,11 +274,20 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
         }
     }
 
-    private void DeleteImage(ImageFile image)
+    private async Task DeleteImageAsync(ImageFile imageFile)
     {
-        if (image != null)
+        if (imageFile is null)
+            return;
+
+        bool confirmed = await _notificationService.ShowConfirmationAsync(
+            "Confirm Delete",
+            $"Are you sure you want to remove '{imageFile.Name}' from the selection?",
+            "Delete",
+            "Cancel");
+
+        if (confirmed)
         {
-            SelectedImages.Remove(image);
+            SelectedImages.Remove(imageFile);
             UpdateSelectedImagesText();
             HasSelectedImages = SelectedImages.Any();
         }

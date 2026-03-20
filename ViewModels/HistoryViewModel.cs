@@ -8,14 +8,16 @@ namespace FileUploadApp.ViewModels;
 public class HistoryViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
+    private readonly INotificationService _notificationService;
     private bool _isBusy;
     private bool _isRefreshing;
     private bool _hasResults;
     private string _emptyMessage = "No upload history available.";
 
-    public HistoryViewModel(IDatabaseService databaseService)
+    public HistoryViewModel(IDatabaseService databaseService, INotificationService notificationService)
     {
         _databaseService = databaseService;
+        _notificationService = notificationService;
         UploadResults = new ObservableCollection<UploadResult>();
 
         LoadHistoryCommand = new Command(async () => await LoadHistoryAsync());
@@ -112,10 +114,9 @@ public class HistoryViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert(
+            await _notificationService.ShowAlertAsync(
                 "Error", 
-                $"Failed to load history: {ex.Message}", 
-                "OK");
+                $"Failed to load history: {ex.Message}");
         }
         finally
         {
@@ -132,10 +133,9 @@ public class HistoryViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert(
+            await _notificationService.ShowAlertAsync(
                 "Error", 
-                $"Failed to refresh history: {ex.Message}", 
-                "OK");
+                $"Failed to refresh history: {ex.Message}");
         }
         finally
         {
@@ -148,13 +148,13 @@ public class HistoryViewModel : BaseViewModel
         if (item == null || IsBusy)
             return;
 
-        var confirm = await Application.Current?.MainPage?.DisplayAlert(
+        var confirm = await _notificationService.ShowConfirmationAsync(
             "Confirm Delete",
             $"Are you sure you want to delete this result?\n\nReceipt: {item.ReceiptNo}\nFile: {item.FileName}",
             "Delete",
             "Cancel");
 
-        if (confirm != true)
+        if (!confirm)
             return;
 
         try
@@ -165,17 +165,15 @@ public class HistoryViewModel : BaseViewModel
             UploadResults.Remove(item);
             HasResults = UploadResults.Any();
 
-            await Application.Current?.MainPage?.DisplayAlert(
+            await _notificationService.ShowAlertAsync(
                 "Success",
-                "Item deleted successfully.",
-                "OK");
+                "Item deleted successfully.");
         }
         catch (Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert(
+            await _notificationService.ShowAlertAsync(
                 "Error",
-                $"Failed to delete item: {ex.Message}",
-                "OK");
+                $"Failed to delete item: {ex.Message}");
         }
         finally
         {
@@ -188,13 +186,13 @@ public class HistoryViewModel : BaseViewModel
         if (IsBusy || !HasResults)
             return;
 
-        var confirm = await Application.Current?.MainPage?.DisplayAlert(
+        var confirm = await _notificationService.ShowConfirmationAsync(
             "Confirm Clear All",
             $"Are you sure you want to delete all {UploadResults.Count} upload results?\n\nThis action cannot be undone.",
             "Delete All",
             "Cancel");
 
-        if (confirm != true)
+        if (!confirm)
             return;
 
         try
@@ -205,17 +203,15 @@ public class HistoryViewModel : BaseViewModel
             UploadResults.Clear();
             HasResults = false;
 
-            await Application.Current?.MainPage?.DisplayAlert(
+            await _notificationService.ShowAlertAsync(
                 "Success",
-                "All history cleared successfully.",
-                "OK");
+                "All history cleared successfully.");
         }
         catch (Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert(
+            await _notificationService.ShowAlertAsync(
                 "Error",
-                $"Failed to clear history: {ex.Message}",
-                "OK");
+                $"Failed to clear history: {ex.Message}");
         }
         finally
         {
