@@ -35,7 +35,7 @@
         <!-- Content with RefreshView -->
         <RefreshView Grid.Row="1"
                      Command="{Binding RefreshCommand}"
-                     IsRefreshing="{Binding IsBusy}">
+                     IsRefreshing="{Binding IsRefreshing}">
             <Grid>
                 <!-- Empty state -->
                 <VerticalStackLayout IsVisible="{Binding HasResults, Converter={StaticResource InvertedBoolConverter}}"
