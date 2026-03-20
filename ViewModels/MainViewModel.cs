@@ -1,13 +1,11 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using FileUploadApp.Models;
+﻿using FileUploadApp.Models;
 using FileUploadApp.Services;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace FileUploadApp.ViewModels;
 
-public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
+public class MainViewModel : BaseViewModel, IQueryAttributable
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly IUploadImage _uploadImageService;
@@ -16,8 +14,6 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
     private bool _isBusy;
     private string _selectedImagesText = string.Empty;
     private bool _hasSelectedImages;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     public MainViewModel(
         IAuthenticationService authenticationService, 
@@ -312,10 +308,5 @@ public class MainViewModel : INotifyPropertyChanged, IQueryAttributable
         {
             SelectedImagesText = $"{SelectedImages.Count} images selected";
         }
-    }
-
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

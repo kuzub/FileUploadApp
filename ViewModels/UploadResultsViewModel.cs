@@ -1,17 +1,13 @@
 ﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
 namespace FileUploadApp.ViewModels;
 
-public class UploadResultsViewModel : INotifyPropertyChanged, IQueryAttributable
+public class UploadResultsViewModel : BaseViewModel, IQueryAttributable
 {
     private bool _isBusy;
     private int _totalUploaded;
     private int _totalFailed;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     public UploadResultsViewModel()
     {
@@ -84,11 +80,6 @@ public class UploadResultsViewModel : INotifyPropertyChanged, IQueryAttributable
     private async Task CloseAsync()
     {
         await Shell.Current.GoToAsync("//MainPage");
-    }
-
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
 
